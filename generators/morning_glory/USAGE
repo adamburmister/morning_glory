@@ -1,0 +1,9 @@
+Description:
+    Create the Amazon S3/Cloudfront authentication key configuration file.
+
+Example:
+    ./script/generate morning_glory config
+
+    This will create:
+        config/s3_keys.yml
+        config/cdn_revision.yml
