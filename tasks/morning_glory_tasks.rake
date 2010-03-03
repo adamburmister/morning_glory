@@ -1,23 +1,25 @@
 namespace :cloudfront do
 
+  begin
+    CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/cloudfront_config.yml")[Rails.env]
+  rescue
+  end
+  
   desc "Bump the revision value used for ENV['RAILS_ASSET_ID'] value"
   task :bump_revision do
-    # TODO: SVN update the following file first
-    require "config/initializers/#{Rails.env}_cdn_revision"
-
     # Store the previous revision so we can delete the bucket from S3 later after deploy
-    PREV_CDN_REVISION = CDN_REVISION[Rails.env] || 0
+    PREV_CDN_REVISION = CLOUDFRONT_CONFIG['revision'] || 0
 
     # Increment the revision counter
-    ENV['RAILS_ASSET_ID'] = 'REV_' + (PREV_CDN_REVISION.gsub('REV_', '').to_i + 1).to_s
+    ENV['RAILS_ASSET_ID'] = 'REV_' + (PREV_CDN_REVISION.to_s.gsub('REV_', '').to_i + 1).to_s
 
     # Write it to the initalizer and commit to svn
-    filename = File.join(Rails.root, "config/initializers/#{Rails.env}_cdn_revision.rb")
-    f = File.open(filename, 'w')
-    f.puts "CDN_REVISION['#{Rails.env}'] = '#{ENV['RAILS_ASSET_ID']}'"
+    #filename = File.join(Rails.root, "config/initializers/#{Rails.env}_cdn_revision.rb")
+    #f = File.open(filename, 'w')
+    #f.puts "CDN_REVISION['#{Rails.env}'] = '#{ENV['RAILS_ASSET_ID']}'"
 
-    puts "Committing updated revision counter #{filename} to #{ENV['RAILS_ASSET_ID']}" 
-    system "svn ci -m 'bumped Revision to #{ENV['RAILS_ASSET_ID']}' #{filename}"
+    puts "Committing updated CDN revision counter for #{Rails.env} to #{ENV['RAILS_ASSET_ID']}" 
+    #system "svn ci -m 'bumped #{Rails.env} CDN revision number to #{ENV['RAILS_ASSET_ID']}'"
   end
 
   desc "Compile Sass stylesheets"
@@ -38,6 +40,14 @@ namespace :cloudfront do
         return
     end
     
+    begin
+      CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/cloudfront_config.yml")[Rails.env]
+    rescue
+      puts "Cloudfront configuration file ./config/cloudfront_config.yml not found."
+      return
+    end
+    BUCKET          = CLOUDFRONT_CONFIG['bucket'] || Rails.env
+    
     SYNC_DIRECTORY  = File.join(Rails.root, 'public')
     TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
     DIRECTORIES     = %w(images javascripts stylesheets)
@@ -47,7 +57,6 @@ namespace :cloudfront do
                        :css => 'text/css',
                        :js  => 'text/javascript'}
     REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(\.gif|\.png|\.jpg|\.jpeg))\1?\)/
-    BUCKET          = S3_CONFIG['bucket']
     
     # Copy all the assets into the temp directory for processing
     File.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)

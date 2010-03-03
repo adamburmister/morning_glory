@@ -1,8 +1,11 @@
-require 'config/initializers/staging_cdn_revision'
-require 'config/initializers/production_cdn_revision'
+begin
+  CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/cloudfront_config.yml")[Rails.env]
+rescue
+end
 
-if defined? CDN_REVISION
-  if CDN_REVISION[Rails.env]
-    ENV['RAILS_ASSET_ID'] = CDN_REVISION[Rails.env]
+if defined? CLOUDFRONT_CONFIG
+  if CLOUDFRONT_CONFIG['enabled'] == true
+    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_CONFIG['revision'].to_s
+    require 'asset_tag_helper'
   end
 end
