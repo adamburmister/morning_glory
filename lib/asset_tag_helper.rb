@@ -11,7 +11,7 @@ module ActionView::Helpers::AssetTagHelper
       if CLOUDFRONT_CONFIG['enabled'] == true  
         # /REV_123/stylesheets/main.css
         if request.ssl?
-          if CLOUDFRONT_CONFIG['allow_ssl'] == true
+          if !AssetHostingWithMinimumSsl::asset_ssl_host.nil?
             # This in on an SSL CDN host, cache bust as normal
             File.join('/', ENV['RAILS_ASSET_ID'], source)
           else

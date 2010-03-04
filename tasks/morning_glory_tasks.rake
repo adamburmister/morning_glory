@@ -1,3 +1,5 @@
+require File.dirname(__FILE__) + "/../lib/morning_glory"
+
 namespace :cloudfront do
 
   begin
@@ -11,7 +13,7 @@ namespace :cloudfront do
     PREV_CDN_REVISION = CLOUDFRONT_CONFIG['revision'] || 0
 
     # Increment the revision counter
-    ENV['RAILS_ASSET_ID'] = 'REV_' + (PREV_CDN_REVISION.to_s.gsub('REV_', '').to_i + 1).to_s
+    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + (PREV_CDN_REVISION.to_i + 1).to_s
 
     # Write it to the initalizer and commit to svn
     #filename = File.join(Rails.root, "config/initializers/#{Rails.env}_cdn_revision.rb")
@@ -31,7 +33,7 @@ namespace :cloudfront do
   end
 
   desc "Deploy assets to S3"
-  task :deploy => [:environment, :sass, :update_revision] do |t, args|
+  task :deploy => [:environment, :sass, :bump_revision] do |t, args|
     require 'aws/s3'
     require 'ftools'
     
@@ -40,14 +42,7 @@ namespace :cloudfront do
         return
     end
     
-    begin
-      CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/cloudfront_config.yml")[Rails.env]
-    rescue
-      puts "Cloudfront configuration file ./config/cloudfront_config.yml not found."
-      return
-    end
-    BUCKET          = CLOUDFRONT_CONFIG['bucket'] || Rails.env
-    
+    BUCKET          = CLOUDFRONT_CONFIG['bucket'] || Rails.env    
     SYNC_DIRECTORY  = File.join(Rails.root, 'public')
     TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
     DIRECTORIES     = %w(images javascripts stylesheets)
@@ -83,7 +78,7 @@ namespace :cloudfront do
     end
 
     # TODO: Update references within JS files
-
+    
     AWS::S3::Base.establish_connection!(
       :access_key_id     => S3_CONFIG['access_key_id'],
       :secret_access_key => S3_CONFIG['secret_access_key']

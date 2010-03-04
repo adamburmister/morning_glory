@@ -1,0 +1,61 @@
+h1. MorningGlory
+
+MorningGlory is a rake task that manages the deployment of static assets to 
+the Amazon Cloudfront CDN.
+
+It solves a number of common issues with S3/Cloudfront. For instance, Cloudfront 
+won't expire assets stored on edge nodes when you redeploy. MorningGlory will
+automatically namespace asset releases for you, then update all references to 
+those renamed assets within your stylesheets.
+
+h2. Configuration
+
+h3. The MorningGlory configuration file, @config/morning_glory.yml@
+
+h3. The Amazon S3 authentication keys configuration file, @config/s3.yml@
+
+
+h3. Set up an asset_host
+
+For each environment that you'd like to utilise the CloudFront CDN for you'll need to define the asset_host within the @config/environments/{ENVIRONMENT}.rb@ configuration file.
+The AssetHostingWithMinimumSsl plugin is used to ensure that you're switching between HTTP and HTTPS as required.
+
+h4. Example @config/environments/production.rb@:
+
+<pre>
+  config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(w
+    "http://cdn%d.app.yoursite.com",
+    "https://www.yoursite.com"
+  )
+</pre>
+
+h2. Dependencies
+
+You will also require the following plugins:
+
+h3. AWS S3
+
+Required for uploading the assets to the Amazon Web Services S3 buckets.
+
+h4. Installation of the AWS gem
+
+See http://amazon.rubyforge.org/ for more documentation on installation.
+
+Install the gem:
+
+bq. @sudo gem i aws-s3@
+
+h3. AssetHostingWithMinimumSsl
+
+You can grab it from http://github.com/dhh/asset-hosting-with-minimum-ssl.
+
+h4. Installation of the AssetHostingWithMinimumSsl plugin
+
+bq. @script/plugin install git://github.com/dhh/asset-hosting-with-minimum-ssl.git@
+
+h2. About the name
+
+Perhaps not what you'd expect, a Morning Glory is a rare cloud formation observed by glider pilots in Australia.
+http://en.wikipedia.org/wiki/Morning_Glory_cloud
+
+Copyright (c) 2010 Adam Burmister, released under the MIT license
