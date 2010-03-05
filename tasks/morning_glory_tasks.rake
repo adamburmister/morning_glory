@@ -1,38 +1,35 @@
 require File.dirname(__FILE__) + "/../lib/morning_glory"
 
-def check_enabled_for_rails_env
-  if CLOUDFRONT_CONFIG['enabled'] != true
-      raise "Deployment is disabled for this environment (#{Rails.env}). Specify an alternative environment with RAILS_ENV={environment name}."
-  end
-end
-
 namespace :mg do
   namespace :cloudfront do
   
   begin
-    CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/cloudfront_config.yml")[Rails.env]
+    MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml")
   rescue
   end
   
+  def check_enabled_for_rails_env
+    if MORNING_GLORY_CONFIG[Rails.env]['enabled'] != true
+        raise "Deployment is disabled for this environment (#{Rails.env}). Specify an alternative environment with RAILS_ENV={environment name}."
+    end
+  end
+    
   desc "Bump the revision value used for ENV['RAILS_ASSET_ID'] value"
   task :bump_revision do
     check_enabled_for_rails_env
     
-    prev = CLOUDFRONT_CONFIG['revision'].to_i || 0
-
+    prev = MORNING_GLORY_CONFIG[Rails.env]['revision'].to_i || 0
+    
     # Increment the revision counter
-    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + (prev + 1).to_s
-
+    ENV['RAILS_ASSET_ID'] = MORNING_GLORY_CONFIG[Rails.env]['revision'] = CLOUDFRONT_REVISION_PREFIX + (prev + 1).to_s
+    
     # Store the previous revision so we can delete the bucket from S3 later after deploy
     PREV_CDN_REVISION = CLOUDFRONT_REVISION_PREFIX + prev.to_s
-
-    # Write it to the initalizer and commit to svn
-    #filename = File.join(Rails.root, "config/initializers/#{Rails.env}_cdn_revision.rb")
-    #f = File.open(filename, 'w')
-    #f.puts "CDN_REVISION['#{Rails.env}'] = '#{ENV['RAILS_ASSET_ID']}'"
-
-    puts "Committing updated CDN revision counter for #{Rails.env} to #{ENV['RAILS_ASSET_ID']}" 
-    #system "svn ci -m 'bumped #{Rails.env} CDN revision number to #{ENV['RAILS_ASSET_ID']}'"
+    
+    File.open("#{RAILS_ROOT}/config/morning_glory.yml", 'w') { |f| YAML.dump(MORNING_GLORY_CONFIG, f) }
+    
+    # puts "Committing updated CDN revision counter for #{Rails.env} to #{ENV['RAILS_ASSET_ID']}" 
+    # system "svn ci -m 'bumped #{Rails.env} CDN revision number to #{ENV['RAILS_ASSET_ID']}'"
   end
 
   desc "Compile Sass stylesheets"
@@ -50,11 +47,11 @@ namespace :mg do
     
     check_enabled_for_rails_env
     
-    BUCKET          = CLOUDFRONT_CONFIG['bucket'] || Rails.env    
+    BUCKET          = MORNING_GLORY_CONFIG[Rails.env]['bucket'] || Rails.env    
     SYNC_DIRECTORY  = File.join(Rails.root, 'public')
     TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cache', 'morning_glory_cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
-    DIRECTORIES     = CLOUDFRONT_CONFIG['asset_directories'] || %w(images javascripts stylesheets)
-    CONTENT_TYPES   = CLOUDFRONT_CONFIG['content_types'] || {
+    DIRECTORIES     = MORNING_GLORY_CONFIG[Rails.env]['asset_directories'] || %w(images javascripts stylesheets)
+    CONTENT_TYPES   = MORNING_GLORY_CONFIG[Rails.env]['content_types'] || {
                         :jpg => 'image/jpeg',
                         :png => 'image/png',
                         :gif => 'image/gif',
@@ -116,7 +113,7 @@ namespace :mg do
         end
       end
 
-      if CLOUDFRONT_CONFIG['delete_prev_rev'] == true
+      if MORNING_GLORY_CONFIG[Rails.env]['delete_prev_rev'] == true
         # TODO: Figure out how to delete from the S3 bucket
         puts "Deleting previous CDN revision #{BUCKET}/#{PREV_CDN_REVISION}"
         AWS::S3::Bucket.find(BUCKET).objects(:prefix => PREV_CDN_REVISION).each do |object|
