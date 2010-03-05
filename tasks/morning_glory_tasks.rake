@@ -1,7 +1,14 @@
 require File.dirname(__FILE__) + "/../lib/morning_glory"
 
-namespace :cloudfront do
+def check_enabled_for_rails_env
+  if CLOUDFRONT_CONFIG['enabled'] != true
+      raise "Deployment is disabled for this environment (#{Rails.env}). Specify an alternative environment with RAILS_ENV={environment name}."
+  end
+end
 
+namespace :mg do
+  namespace :cloudfront do
+  
   begin
     CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/cloudfront_config.yml")[Rails.env]
   rescue
@@ -9,11 +16,15 @@ namespace :cloudfront do
   
   desc "Bump the revision value used for ENV['RAILS_ASSET_ID'] value"
   task :bump_revision do
-    # Store the previous revision so we can delete the bucket from S3 later after deploy
-    PREV_CDN_REVISION = CLOUDFRONT_CONFIG['revision'] || 0
+    check_enabled_for_rails_env
+    
+    prev = CLOUDFRONT_CONFIG['revision'].to_i || 0
 
     # Increment the revision counter
-    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + (PREV_CDN_REVISION.to_i + 1).to_s
+    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + (prev + 1).to_s
+
+    # Store the previous revision so we can delete the bucket from S3 later after deploy
+    PREV_CDN_REVISION = CLOUDFRONT_REVISION_PREFIX + prev.to_s
 
     # Write it to the initalizer and commit to svn
     #filename = File.join(Rails.root, "config/initializers/#{Rails.env}_cdn_revision.rb")
@@ -37,21 +48,21 @@ namespace :cloudfront do
     require 'aws/s3'
     require 'ftools'
     
-    if %w(production staging).include?(Rails.env) == false
-        puts "You can only upload to the CDN for staging or production environments. (Found #{Rails.env})"
-        return
-    end
+    check_enabled_for_rails_env
     
     BUCKET          = CLOUDFRONT_CONFIG['bucket'] || Rails.env    
     SYNC_DIRECTORY  = File.join(Rails.root, 'public')
-    TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
-    DIRECTORIES     = %w(images javascripts stylesheets)
-    CONTENT_TYPES   = {:jpg => 'image/jpeg',
-                       :png => 'image/png',
-                       :gif => 'image/gif',
-                       :css => 'text/css',
-                       :js  => 'text/javascript'}
-    REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(\.gif|\.png|\.jpg|\.jpeg))\1?\)/
+    TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cache', 'morning_glory_cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
+    DIRECTORIES     = CLOUDFRONT_CONFIG['asset_directories'] || %w(images javascripts stylesheets)
+    CONTENT_TYPES   = CLOUDFRONT_CONFIG['content_types'] || {
+                        :jpg => 'image/jpeg',
+                        :png => 'image/png',
+                        :gif => 'image/gif',
+                        :css => 'text/css',
+                        :js  => 'text/javascript'
+                      }
+    # REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(\.gif|\.png|\.jpg|\.jpeg))\1?\)/
+    REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join(',')}))\1?\)/
     
     # Copy all the assets into the temp directory for processing
     File.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)
@@ -84,38 +95,41 @@ namespace :cloudfront do
       :secret_access_key => S3_CONFIG['secret_access_key']
     )
 
-    puts "Creating #{BUCKET}"
-    AWS::S3::Bucket.create(BUCKET)
-
-    # Uncomment the following line to log deployments to the S3 bucket
-    # AWS::S3::Bucket.enable_logging_for(BUCKET)
-
-    puts "Uploading files to S3 #{BUCKET}"
-    DIRECTORIES.each do |directory|
-      Dir[File.join(TEMP_DIRECTORY, directory, '**', "*.{#{CONTENT_TYPES.keys.join(',')}}")].each do |file|
-        file_path = file.gsub(/.*#{TEMP_DIRECTORY}\//, "")
-        file_path = File.join(ENV['RAILS_ASSET_ID'], file_path)
-        file_ext = file.split(/\./)[-1].to_sym
-          
-        puts "   uploading to #{file_path}"
-        AWS::S3::S3Object.store(file_path, open(file), BUCKET,
-          :access => :public_read,
-          :content_type => CONTENT_TYPES[file_ext])
-      end
-    end
-
     begin
-      puts "Deleting previous CDN revision #{BUCKET}/#{PREV_CDN_REVISION}"
-      if AWS::S3::S3Object.exists? PREV_CDN_REVISION
-        AWS::S3::S3Object.find(PREV_CDN_REVISION, BUCKET).objects.each do |object|
+      puts "Creating #{BUCKET}"
+      AWS::S3::Bucket.create(BUCKET)
+
+      # Uncomment the following line to log deployments to the S3 bucket
+      # AWS::S3::Bucket.enable_logging_for(BUCKET)
+
+      puts "Uploading files to S3 #{BUCKET}"
+      DIRECTORIES.each do |directory|
+        Dir[File.join(TEMP_DIRECTORY, directory, '**', "*.{#{CONTENT_TYPES.keys.join(',')}}")].each do |file|
+          file_path = file.gsub(/.*#{TEMP_DIRECTORY}\//, "")
+          file_path = File.join(ENV['RAILS_ASSET_ID'], file_path)
+          file_ext = file.split(/\./)[-1].to_sym
+          
+          puts "   uploading to #{file_path}"
+          AWS::S3::S3Object.store(file_path, open(file), BUCKET,
+            :access => :public_read,
+            :content_type => CONTENT_TYPES[file_ext])
+        end
+      end
+
+      if CLOUDFRONT_CONFIG['delete_prev_rev'] == true
+        # TODO: Figure out how to delete from the S3 bucket
+        puts "Deleting previous CDN revision #{BUCKET}/#{PREV_CDN_REVISION}"
+        AWS::S3::Bucket.find(BUCKET).objects(:prefix => PREV_CDN_REVISION).each do |object|
+          puts "   deleting #{object.key}"
           object.delete
         end
       end
     rescue
+      raise
+    ensure
+      puts "Deleting temp cache files in #{TEMP_DIRECTORY}"
+      FileUtils.rm_r TEMP_DIRECTORY
     end
-
-    puts "Deleting cache files from #{TEMP_DIRECTORY}"
-    FileUtils.rm_r TEMP_DIRECTORY
-    
+  end
   end
 end
