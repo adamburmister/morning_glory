@@ -1,12 +1,14 @@
 h1. MorningGlory
 
-MorningGlory is a rake task that manages the deployment of static assets to 
-the Amazon Cloudfront CDN.
+h2. What does it do?
+MorningGlory is a rake task that manages the deployment of static assets into an Amazon Cloudfront CDN's S3 Bucket.
 
-It solves a number of common issues with S3/Cloudfront. For instance, Cloudfront 
-won't expire assets stored on edge nodes when you redeploy. MorningGlory will
-automatically namespace asset releases for you, then update all references to 
-those renamed assets within your stylesheets.
+It solves a number of common issues with S3/Cloudfront. For instance, Cloudfront won't expire assets stored on edge nodes when you redeploy. 
+MorningGlory will automatically namespace asset releases for you, then update all references to those renamed assets within your stylesheets.
+
+h2. What doesn't it do for you?
+You will require an Amazon Web Services (AWS) account in order to use this gem. Specially you will need S3 for storing the files you wish to distrubute, and Cloudfront for CDN distribution of those files.
+MorningGlory cannot configure your Cloudfront distributions for you automatically. You will manually have to login to your AWS Management Console account, https://console.aws.amazon.com/cloudfront/home, and set up a distribution pointing to an S3 Bucket.
 
 h2. Configuration
 
