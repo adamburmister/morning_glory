@@ -2,7 +2,7 @@
 CLOUDFRONT_REVISION_PREFIX = 'REV_'
 
 begin
-  CLOUDFRONT_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml")[Rails.env]
+  MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml")[Rails.env]
 rescue
   raise "Error loading MorningGlory configuration files. Please check config/morning_glory.yml is configured correctly."
 end
@@ -13,8 +13,8 @@ rescue
   raise "Error loading MorningGlory configuration files. Please check config/s3.yml is configured correctly."
 end
 
-if defined? CLOUDFRONT_CONFIG
-  if CLOUDFRONT_CONFIG['enabled'] == true
-    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + CLOUDFRONT_CONFIG['revision'].to_s
+if defined? MORNING_GLORY_CONFIG
+  if MORNING_GLORY_CONFIG['enabled'] == true
+    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + MORNING_GLORY_CONFIG['revision'].to_s
   end
 end
