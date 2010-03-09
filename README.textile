@@ -1,18 +1,28 @@
 h1. MorningGlory
 
+MorningGlory is comprised of a rake task and helper methods that manages the deployment of static assets into an Amazon CloudFront CDN's S3 Bucket, improving the performance of static assets on your Rails web applications.
+
+_NOTE: You will require an Amazon Web Services (AWS) account in order to use this gem. Specially: S3 for storing the files you wish to distribute, and CloudFront for CDN distribution of those files._
+
 h2. What does it do?
-MorningGlory is a rake task that manages the deployment of static assets into an Amazon Cloudfront CDN's S3 Bucket.
 
-It solves a number of common issues with S3/Cloudfront. For instance, Cloudfront won't expire assets stored on edge nodes when you redeploy. 
-MorningGlory will automatically namespace asset releases for you, then update all references to those renamed assets within your stylesheets.
+MorningGlory provides an easy way to deploy Ruby on Rails application assets to the Amazon CloudFront CDN. 
 
-h2. What doesn't it do for you?
-You will require an Amazon Web Services (AWS) account in order to use this gem. Specially you will need S3 for storing the files you wish to distrubute, and Cloudfront for CDN distribution of those files.
-MorningGlory cannot configure your Cloudfront distributions for you automatically. You will manually have to login to your AWS Management Console account, https://console.aws.amazon.com/cloudfront/home, and set up a distribution pointing to an S3 Bucket.
+It solves a number of common issues with S3/CloudFront. For instance, CloudFront won't automatically expire old assets stored on edge nodes when you redeploy new assets. 
+To fix this MorningGlory will automatically namespace asset releases for you, then update all references to those renamed assets within your stylesheets ensuring there are no broken asset links.
+
+It also provides a helper method to rewrite all standard Rails asset helper generated URLs to your CloudFront CDN distributions, as well as handling switching between HTTP and HTTPS.
+
+MorningGlory was also built with SASS (Syntactically Awesome Stylesheets) in mind. If you use Sass for your stylesheets they will automatically be built before deployment to the CDN. See http://sass-lang.com/ for more information on Sass.s
+
+h2. What it doesn't do
+
+MorningGlory cannot configure your CloudFront distributions for you automatically. You will manually have to login to your AWS Management Console account, https://console.aws.amazon.com/cloudfront/home, and set up a distribution pointing to an S3 Bucket.
 
 h2. Configuration
 
 h3. The MorningGlory configuration file, @config/morning_glory.yml@
+
 
 h3. The Amazon S3 authentication keys configuration file, @config/s3.yml@
 
