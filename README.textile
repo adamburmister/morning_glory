@@ -17,15 +17,21 @@ MorningGlory was also built with SASS (Syntactically Awesome Stylesheets) in min
 
 h2. What it doesn't do
 
-MorningGlory cannot configure your CloudFront distributions for you automatically. You will manually have to login to your AWS Management Console account, https://console.aws.amazon.com/cloudfront/home, and set up a distribution pointing to an S3 Bucket.
+MorningGlory cannot configure your CloudFront distributions for you automatically. You will manually have to login to your AWS Management Console account, "https://console.aws.amazon.com/cloudfront/home":https://console.aws.amazon.com/cloudfront/home, and set up a distribution pointing to an S3 Bucket.
+
+h2. Installation
+
+[Being written...]
 
 h2. Configuration
 
 h3. The MorningGlory configuration file, @config/morning_glory.yml@
 
+[Being written...]
 
 h3. The Amazon S3 authentication keys configuration file, @config/s3.yml@
 
+[Being written...]
 
 h3. Set up an asset_host
 
@@ -51,7 +57,7 @@ Required for uploading the assets to the Amazon Web Services S3 buckets.
 
 h4. Installation of the AWS gem
 
-See http://amazon.rubyforge.org/ for more documentation on installation.
+See "http://amazon.rubyforge.org/":http://amazon.rubyforge.org/ for more documentation on installation.
 
 Install the gem:
 
@@ -59,7 +65,7 @@ bq. @sudo gem i aws-s3@
 
 h3. AssetHostingWithMinimumSsl
 
-You can grab it from http://github.com/dhh/asset-hosting-with-minimum-ssl.
+You can grab it from "http://github.com/dhh/asset-hosting-with-minimum-ssl":http://github.com/dhh/asset-hosting-with-minimum-ssl.
 
 h4. Installation of the AssetHostingWithMinimumSsl plugin
 
@@ -67,7 +73,6 @@ bq. @script/plugin install git://github.com/dhh/asset-hosting-with-minimum-ssl.g
 
 h2. About the name
 
-Perhaps not what you'd expect, a Morning Glory is a rare cloud formation observed by glider pilots in Australia.
-http://en.wikipedia.org/wiki/Morning_Glory_cloud
+Perhaps not what you'd expect, a "Morning Glory":http://en.wikipedia.org/wiki/Morning_Glory_cloud is a rare cloud formation observed by glider pilots in Australia.
 
-Copyright (c) 2010 Adam Burmister, released under the MIT license
+Copyright (c) 2010 "@AdamBurmister":http://twitter.com/adamburmister/, released under the MIT license
