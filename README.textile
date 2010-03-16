@@ -41,7 +41,7 @@ The AssetHostingWithMinimumSsl plugin is used to ensure that you're switching be
 h4. Example @config/environments/production.rb@:
 
 <pre>
-  config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(w
+  config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(
     "http://cdn%d.app.yoursite.com",
     "https://www.yoursite.com"
   )
@@ -73,6 +73,6 @@ bq. @script/plugin install git://github.com/dhh/asset-hosting-with-minimum-ssl.g
 
 h2. About the name
 
-Perhaps not what you'd expect, a "Morning Glory":http://en.wikipedia.org/wiki/Morning_Glory_cloud is a rare cloud formation observed by glider pilots in Australia.
+Perhaps not what you'd expect; a "Morning Glory":http://en.wikipedia.org/wiki/Morning_Glory_cloud is a rare cloud formation observed by glider pilots in Australia (see my side project, "YourFlightLog.com for flight-logging software for paraglider and hang-glider pilots":http://www.yourflightlog.com, from which the Morning Glory plugin was originally extracted).
 
 Copyright (c) 2010 "@AdamBurmister":http://twitter.com/adamburmister/, released under the MIT license

@@ -9,8 +9,8 @@ namespace :mg do
   end
   
   def check_enabled_for_rails_env
-    if MORNING_GLORY_CONFIG[Rails.env]['enabled'] != true
-        raise "Deployment is disabled for this environment (#{Rails.env}). Specify an alternative environment with RAILS_ENV={environment name}."
+    if !defined? MORNING_GLORY_CONFIG[Rails.env] || MORNING_GLORY_CONFIG[Rails.env]['enabled'] != true
+        raise "Deployment appears to be disabled for this environment (#{Rails.env}) within config/morning_glory.yml. Specify an alternative environment with RAILS_ENV={environment name}."
     end
   end
     
@@ -18,13 +18,15 @@ namespace :mg do
   task :bump_revision do
     check_enabled_for_rails_env
     
-    prev = MORNING_GLORY_CONFIG[Rails.env]['revision'].to_i || 0
+    prev = MORNING_GLORY_CONFIG[Rails.env]['revision'].to_s
     
     # Increment the revision counter
-    ENV['RAILS_ASSET_ID'] = MORNING_GLORY_CONFIG[Rails.env]['revision'] = CLOUDFRONT_REVISION_PREFIX + (prev + 1).to_s
+    timestamp = Time.new.strftime("%Y%m%d%H%M%S")
+    MORNING_GLORY_CONFIG[Rails.env]['revision'] = timestamp
+    ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + timestamp
     
     # Store the previous revision so we can delete the bucket from S3 later after deploy
-    PREV_CDN_REVISION = CLOUDFRONT_REVISION_PREFIX + prev.to_s
+    PREV_CDN_REVISION = CLOUDFRONT_REVISION_PREFIX + prev
     
     File.open("#{RAILS_ROOT}/config/morning_glory.yml", 'w') { |f| YAML.dump(MORNING_GLORY_CONFIG, f) }
     
@@ -46,10 +48,12 @@ namespace :mg do
     require 'ftools'
     
     check_enabled_for_rails_env
-    
-    BUCKET          = MORNING_GLORY_CONFIG[Rails.env]['bucket'] || Rails.env    
+
+    # Constants
     SYNC_DIRECTORY  = File.join(Rails.root, 'public')
     TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cache', 'morning_glory_cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
+    # Configuration constants
+    BUCKET          = MORNING_GLORY_CONFIG[Rails.env]['bucket'] || Rails.env    
     DIRECTORIES     = MORNING_GLORY_CONFIG[Rails.env]['asset_directories'] || %w(images javascripts stylesheets)
     CONTENT_TYPES   = MORNING_GLORY_CONFIG[Rails.env]['content_types'] || {
                         :jpg => 'image/jpeg',
@@ -58,7 +62,8 @@ namespace :mg do
                         :css => 'text/css',
                         :js  => 'text/javascript'
                       }
-    # REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(\.gif|\.png|\.jpg|\.jpeg))\1?\)/
+    S3_LOGGING_ENABLED = MORNING_GLORY_CONFIG[Rails.env]['s3_logging_enabled'] || false
+    DELETE_PREV_REVISION = MORNING_GLORY_CONFIG[Rails.env]['delete_prev_rev'] || false
     REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join(',')}))\1?\)/
     
     # Copy all the assets into the temp directory for processing
@@ -97,7 +102,7 @@ namespace :mg do
       AWS::S3::Bucket.create(BUCKET)
 
       # Uncomment the following line to log deployments to the S3 bucket
-      # AWS::S3::Bucket.enable_logging_for(BUCKET)
+      AWS::S3::Bucket.enable_logging_for(BUCKET) if S3_LOGGING_ENABLED
 
       puts "Uploading files to S3 #{BUCKET}"
       DIRECTORIES.each do |directory|
@@ -113,8 +118,8 @@ namespace :mg do
         end
       end
 
-      if MORNING_GLORY_CONFIG[Rails.env]['delete_prev_rev'] == true
-        # TODO: Figure out how to delete from the S3 bucket
+      if DELETE_PREV_REVISION
+        # TODO: Figure out how to delete from the S3 bucket properly
         puts "Deleting previous CDN revision #{BUCKET}/#{PREV_CDN_REVISION}"
         AWS::S3::Bucket.find(BUCKET).objects(:prefix => PREV_CDN_REVISION).each do |object|
           puts "   deleting #{object.key}"
