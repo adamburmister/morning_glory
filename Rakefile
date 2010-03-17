@@ -32,7 +32,6 @@ begin
     gemspec.email = "adam@whiterabbitconsulting.eu"  
     gemspec.homepage = "http://github.com/adamburmister/MorningGlory/"  
     gemspec.authors = ["Adam Burmister"]  
-    gemspec.files =  FileList["[A-Z]*.rb","{bin,javascripts,lib,rails,tasks}/**/*"]
     gemspec.add_dependency('aws-s3')
     gemspec.requirements << 'An Amazon AWS S3 and Cloudfront account'
     gemspec.requirements << 'Configured S3 Buckets and Cloudfront Distributions setup and configured, ready to have assets deployed to them.'
