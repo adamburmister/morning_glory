@@ -1,10 +1,10 @@
 require File.dirname(__FILE__) + "/../lib/morning_glory"
 
-namespace :mg do
+namespace :morning_glory do
   namespace :cloudfront do
   
   begin
-    MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml")
+    MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
   rescue
   end
   
@@ -42,7 +42,7 @@ namespace :mg do
     end
   end
 
-  desc "Deploy assets to S3"
+  desc "Deploy assets to S3 and Cloudfront"
   task :deploy => [:environment, :sass, :bump_revision] do |t, args|
     require 'aws/s3'
     require 'ftools'
