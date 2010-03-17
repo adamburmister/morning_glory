@@ -51,7 +51,7 @@ namespace :morning_glory do
 
     # Constants
     SYNC_DIRECTORY  = File.join(Rails.root, 'public')
-    TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'cache', 'morning_glory_cloudfront_cache', Rails.env, ENV['RAILS_ASSET_ID']);
+    TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'morning_glory', 'cloudfront', Rails.env, ENV['RAILS_ASSET_ID']);
     # Configuration constants
     BUCKET          = MORNING_GLORY_CONFIG[Rails.env]['bucket'] || Rails.env    
     DIRECTORIES     = MORNING_GLORY_CONFIG[Rails.env]['asset_directories'] || %w(images javascripts stylesheets)
@@ -64,7 +64,7 @@ namespace :morning_glory do
                       }
     S3_LOGGING_ENABLED = MORNING_GLORY_CONFIG[Rails.env]['s3_logging_enabled'] || false
     DELETE_PREV_REVISION = MORNING_GLORY_CONFIG[Rails.env]['delete_prev_rev'] || false
-    REGEX_ROOT_RELATIVE_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join(',')}))\1?\)/
+    REGEX_ROOT_RELATIVE_CSS_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join('|')}))\1?\)/
     
     # Copy all the assets into the temp directory for processing
     File.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)
@@ -85,7 +85,7 @@ namespace :morning_glory do
     DIRECTORIES.each do |directory|
       Dir[File.join(TEMP_DIRECTORY, directory, '**', "*.{css}")].each do |file|
         puts "   renaming image references within #{file}"
-        buffer = File.new(file,'r').read.gsub(REGEX_ROOT_RELATIVE_URL) { |m| m.insert m.index('(') + 1, '/'+ENV['RAILS_ASSET_ID'] }
+        buffer = File.new(file,'r').read.gsub(REGEX_ROOT_RELATIVE_CSS_URL) { |m| m.insert m.index('(') + 1, '/'+ENV['RAILS_ASSET_ID'] }
         File.open(file,'w') {|fw| fw.write(buffer)}
       end
     end

@@ -7,7 +7,8 @@ module ActionView::Helpers::AssetTagHelper
     if asset_id.blank?
       source
     else
-      if (MORNING_GLORY_CONFIG['enabled'] == true) && (!request.ssl? || (request.ssl? && !AssetHostingWithMinimumSsl::asset_ssl_host.nil?))
+      # If the request isn't SSL, or if the request is SSL and the SSL host is set
+      if !request.ssl? || (request.ssl? && !AssetHostingWithMinimumSsl::asset_ssl_host.empty?)
         File.join('/', ENV['RAILS_ASSET_ID'], source)
       else
         source + "?#{asset_id}"
