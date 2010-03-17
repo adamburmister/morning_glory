@@ -21,7 +21,9 @@ MorningGlory cannot configure your CloudFront distributions for you automaticall
 
 h2. Installation
 
-[Being written...]
+<pre>
+	script/plugin install git://github.com/adamburmister/MorningGlory.git
+</pre>
 
 h2. Configuration
 
