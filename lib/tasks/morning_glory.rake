@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/../lib/morning_glory"
+require File.dirname(__FILE__) + "/../morning_glory"
 
 namespace :morning_glory do
   namespace :cloudfront do
