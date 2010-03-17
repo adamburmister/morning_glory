@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{morning_glory}
-  s.version = "0.0.1"
+  s.version = "0.0.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Adam Burmister"]
@@ -16,10 +16,22 @@ Gem::Specification.new do |s|
     "README.textile"
   ]
   s.files = [
-    "lib/asset_tag_helper.rb",
+    "MIT-LICENSE",
+     "README.textile",
+     "Rakefile",
+     "VERSION",
+     "init.rb",
+     "install.rb",
+     "lib/asset_tag_helper.rb",
      "lib/morning_glory.rb",
+     "lib/tasks/morning_glory.rake",
+     "morning_glory.gemspec",
+     "pkg/morning_glory-0.0.0.gem",
+     "pkg/morning_glory-0.0.1.gem",
      "rails/init.rb",
-     "tasks/morning_glory.rake"
+     "test/morning_glory_test.rb",
+     "test/test_helper.rb",
+     "uninstall.rb"
   ]
   s.homepage = %q{http://github.com/adamburmister/MorningGlory/}
   s.rdoc_options = ["--charset=UTF-8"]
