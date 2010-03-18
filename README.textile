@@ -22,7 +22,7 @@ Morning Glory cannot configure your CloudFront distributions for you automatical
 h2. Installation
 
 <pre>
-script/plugin install git://github.com/adamburmister/Morning Glory.git
+script/plugin install git://github.com/adamburmister/morning_glory.git
 </pre>
 
 h2. Configuration
@@ -51,7 +51,7 @@ h3. Set up an asset_host
 For each environment that you'd like to utilise the CloudFront CDN for you'll need to define the asset_host within the @config/environments/{ENVIRONMENT}.rb@ configuration file.
 We recommend using the AssetHostingWithMinimumSsl plugin is used to ensure that you're switching between HTTP and HTTPS as required.
 
-h4. Example @config/environments/production.rb@ with AssetHostingWithMinimumSsl:
+h4. Example config/environments/production.rb @asset_host@ snippet using AssetHostingWithMinimumSsl:
 
 <pre>
 config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(
