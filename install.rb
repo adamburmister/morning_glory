@@ -2,12 +2,12 @@
 puts '=' * 80
 puts <<EOF
 
-CONFIGURATION FILES
+MORNING GLORY CONFIG
 
-See the github wiki for more detailed configuration information
+See the github wiki for more detailed configuration information at:
 http://wiki.github.com/adamburmister/morning_glory/
 
-- Morning Glory -
+= Morning Glory =
 You will need to manually create & configure your config/morning_glory.yml file.
 Sample config/morning_glory.yml:
 
@@ -31,7 +31,7 @@ Sample config/morning_glory.yml:
     enabled: false
 
 
-- Amazon AWS -
+= Amazon AWS =
 You will need to manually create & configure your config/s3.yml file.
 This file contains your access credentials for accessing the Amazon S3 service.
 Sample config/s3.yml:

@@ -22,7 +22,7 @@ Morning Glory cannot configure your CloudFront distributions for you automatical
 h2. Installation
 
 <pre>
-  script/plugin install git://github.com/adamburmister/Morning Glory.git
+script/plugin install git://github.com/adamburmister/Morning Glory.git
 </pre>
 
 h2. Configuration
@@ -33,20 +33,31 @@ h3. The Morning Glory configuration file, @config/morning_glory.yml@
 
 h3. The Amazon S3 authentication keys configuration file, @config/s3.yml@
 
-[Being written...]
+This file provides the access credentials for your Amazon AWS S3 account.
+You can configure keys for all your environments (production,staging,testing,etc).
+
+<pre>
+---
+production:
+  access_key_id: YOUR_ACCESS_KEY
+  secret_access_key: YOUR_SECRET_ACCESS_KEY
+staging:
+  access_key_id: YOUR_ACCESS_KEY
+  secret_access_key: YOUR_SECRET_ACCESS_KEY
+</pre>
 
 h3. Set up an asset_host
 
 For each environment that you'd like to utilise the CloudFront CDN for you'll need to define the asset_host within the @config/environments/{ENVIRONMENT}.rb@ configuration file.
-The AssetHostingWithMinimumSsl plugin is used to ensure that you're switching between HTTP and HTTPS as required.
+We recommend using the AssetHostingWithMinimumSsl plugin is used to ensure that you're switching between HTTP and HTTPS as required.
 
-h4. Example @config/environments/production.rb@:
+h4. Example @config/environments/production.rb@ with AssetHostingWithMinimumSsl:
 
 <pre>
-  config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(
-    "http://cdn%d.app.yoursite.com",
-    "https://www.yoursite.com"
-  )
+config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(
+  "http://cdn%d.app.yoursite.com",
+  "https://www.yoursite.com"
+)
 </pre>
 
 h2. Dependencies
@@ -56,22 +67,12 @@ You will also require the following plugins:
 h3. AWS S3
 
 Required for uploading the assets to the Amazon Web Services S3 buckets.
-
-h4. Installation of the AWS gem
-
 See "http://amazon.rubyforge.org/":http://amazon.rubyforge.org/ for more documentation on installation.
 
-Install the gem:
+h3. AssetHostingWithMinimumSsl (optional)
 
-bq. @sudo gem i aws-s3@
-
-h3. AssetHostingWithMinimumSsl
-
-You can grab it from "http://github.com/dhh/asset-hosting-with-minimum-ssl":http://github.com/dhh/asset-hosting-with-minimum-ssl.
-
-h4. Installation of the AssetHostingWithMinimumSsl plugin
-
-bq. @script/plugin install git://github.com/dhh/asset-hosting-with-minimum-ssl.git@
+Used to deal with switching between HTTP and HTTPS asset hosts, ensuring you serve non-HTTPS traffic from the fast CDN, and secure assets from your SSL signed web server.
+See "http://github.com/dhh/asset-hosting-with-minimum-ssl":http://github.com/dhh/asset-hosting-with-minimum-ssl.
 
 h2. About the name
 
