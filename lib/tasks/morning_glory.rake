@@ -100,8 +100,7 @@ namespace :morning_glory do
     begin
       puts "Creating #{BUCKET}"
       AWS::S3::Bucket.create(BUCKET)
-
-      # Uncomment the following line to log deployments to the S3 bucket
+      
       AWS::S3::Bucket.enable_logging_for(BUCKET) if S3_LOGGING_ENABLED
 
       puts "Uploading files to S3 #{BUCKET}"
@@ -118,7 +117,8 @@ namespace :morning_glory do
         end
       end
 
-      if DELETE_PREV_REVISION
+      # If the configured to delete the prev revision, and the prev revision value was in the YAML (not the blank concat of CLOUDFRONT_REVISION_PREFIX + revision number)
+      if DELETE_PREV_REVISION && PREV_CDN_REVISION != CLOUDFRONT_REVISION_PREFIX
         # TODO: Figure out how to delete from the S3 bucket properly
         puts "Deleting previous CDN revision #{BUCKET}/#{PREV_CDN_REVISION}"
         AWS::S3::Bucket.find(BUCKET).objects(:prefix => PREV_CDN_REVISION).each do |object|
@@ -132,6 +132,11 @@ namespace :morning_glory do
       puts "Deleting temp cache files in #{TEMP_DIRECTORY}"
       FileUtils.rm_r TEMP_DIRECTORY
     end
+    
+    # Output finished message
+    puts '=' * 80
+    puts "\n  REMINDER: Commit the config/morning_glory.yml file to your source control management system now.\n"
+    puts '=' * 80
   end
   end
 end
