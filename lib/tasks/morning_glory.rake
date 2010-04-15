@@ -91,7 +91,7 @@ namespace :morning_glory do
       DIRECTORIES.each do |directory|
         Dir[File.join(TEMP_DIRECTORY, directory, '**', "*.{css}")].each do |file|
           puts " ** Renaming image references within #{file}"
-          buffer = File.new(file,'r').read.gsub(REGEX_ROOT_RELATIVE_CSS_URL) { |m| m.insert m.index('(') + 1, '/'+ENV['RAILS_ASSET_ID'] }
+          buffer = File.new(file,'r').read.gsub(REGEX_ROOT_RELATIVE_CSS_URL) { |m| m.insert m.index('(') + ($1 ? 2 : 1), '/'+ENV['RAILS_ASSET_ID'] }
           File.open(file,'w') {|fw| fw.write(buffer)}
         end
       end
