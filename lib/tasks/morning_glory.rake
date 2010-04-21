@@ -18,14 +18,48 @@ namespace :morning_glory do
         raise "You seem to be lacking your Amazon S3 configuration file, config/s3.yml"
       end
     end
-
-    def bump_revision
-      prev = MORNING_GLORY_CONFIG[Rails.env]['revision'].to_s
     
-      # Increment the revision counter
-      timestamp = Time.new.strftime("%Y%m%d%H%M%S")
-      MORNING_GLORY_CONFIG[Rails.env]['revision'] = timestamp
-      ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + timestamp
+    def get_revision
+      rev = nil
+
+      # GIT
+      begin
+        git_rev = `git show --pretty=format:"%H|%ci" --quiet`.split('|')[0]
+        if !git_rev.nil?
+          rev = git_rev
+          puts rev
+          puts '* Using Git revision'
+        end
+      rescue
+        # Ignore
+      end
+      # SVN
+      begin
+        svn_rev = `svnversion .`.chomp.gsub(':','_')
+        puts svn_rev
+        if svn_rev != 'exported' && svn_rev != '' && svn_rev != nil
+          rev = Digest::MD5.hexdigest( svn_rev )
+          puts '* Using SVN revision'
+        end
+      rescue
+        # Ignore
+      end
+      
+      if rev.nil?
+        rev = Time.new.strftime("%Y%m%d%H%M%S") 
+        puts '* Using timestamp revision'
+      end
+      
+      return rev
+    end
+
+    def update_revision
+      prev = MORNING_GLORY_CONFIG[Rails.env]['revision'].to_s
+
+      rev = get_revision
+      
+      MORNING_GLORY_CONFIG[Rails.env]['revision'] = rev
+      ENV['RAILS_ASSET_ID'] = CLOUDFRONT_REVISION_PREFIX + rev
     
       # Store the previous revision so we can delete the bucket from S3 later after deploy
       @@prev_cdn_revision = CLOUDFRONT_REVISION_PREFIX + prev
@@ -51,7 +85,7 @@ namespace :morning_glory do
       
       check_config
       
-      bump_revision
+      update_revision
 
       compile_sass_if_available
 
