@@ -7,12 +7,15 @@ module ActionView::Helpers::AssetTagHelper
     if asset_id.blank?
       source
     else
-      # If the request isn't SSL, or if the request is SSL and the SSL host is set
-      if !request.ssl? || (request.ssl? && !AssetHostingWithMinimumSsl::asset_ssl_host.empty?)
-        File.join('/', ENV['RAILS_ASSET_ID'], source)
-      else
-        source + "?#{asset_id}"
-      end
+      # AB: As of June AWS Cloudfront supports HTTPS requests. This alternative code path should now be redundant.
+      # # If the request isn't SSL, or if the request is SSL and the SSL host is set
+      # if !request.ssl? || (request.ssl? && !AssetHostingWithMinimumSsl::asset_ssl_host.empty?)
+      #   File.join('/', ENV['RAILS_ASSET_ID'], source)
+      # else
+      #   source + "?#{asset_id}"
+      # end
+      
+      File.join('/', ENV['RAILS_ASSET_ID'], source)
     end
   end
 

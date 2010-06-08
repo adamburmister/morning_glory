@@ -4,8 +4,7 @@ namespace :morning_glory do
   namespace :cloudfront do
 
     @@prev_cdn_revision = nil
-    @@scm_commit_required = false
-    
+  
     begin
       MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
     rescue
@@ -27,7 +26,8 @@ namespace :morning_glory do
       begin
         git_rev = `git show --pretty=format:"%H|%ci" --quiet`.split('|')[0]
         if !git_rev.nil?
-          rev = git_rev.to_s
+          rev = git_rev
+          puts rev
           puts '* Using Git revision'
         end
       rescue
@@ -38,7 +38,7 @@ namespace :morning_glory do
         svn_rev = `svnversion .`.chomp.gsub(':','_')
         puts svn_rev
         if svn_rev != 'exported' && svn_rev != '' && svn_rev != nil
-          rev = Digest::MD5.hexdigest( svn_rev ).to_s
+          rev = Digest::MD5.hexdigest( svn_rev )
           puts '* Using SVN revision'
         end
       rescue
@@ -48,7 +48,6 @@ namespace :morning_glory do
       if rev.nil?
         rev = Time.new.strftime("%Y%m%d%H%M%S") 
         puts '* Using timestamp revision'
-        @@scm_commit_required = true
       end
       
       return rev
@@ -139,7 +138,7 @@ namespace :morning_glory do
       )
 
       begin
-        puts "* Attempting to create S3 Bucket '#{BUCKET}'"
+        puts "* Attempting to creating S3 Bucket '#{BUCKET}'"
         AWS::S3::Bucket.create(BUCKET)
       
         AWS::S3::Bucket.enable_logging_for(BUCKET) if S3_LOGGING_ENABLED
@@ -175,12 +174,6 @@ namespace :morning_glory do
       end
       
       puts "MorningGlory: DONE! Your assets have been deployed to the Cloudfront CDN."
-      
-      if @@scm_commit_required == true
-        puts '='*80
-        puts "NB: You will need to commit the /config/morning_glory.yml file and update it on your servers."
-        puts '='*80
-      end
     end
   end
 end

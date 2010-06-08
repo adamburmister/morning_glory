@@ -64,15 +64,21 @@ production:
 h3. Set up an asset_host
 
 For each environment that you'd like to utilise the CloudFront CDN for you'll need to define the asset_host within the @config/environments/{ENVIRONMENT}.rb@ configuration file.
-In my projects I've used the AssetHostingWithMinimumSsl plugin to ensure that you're switching between HTTP and HTTPS as required.
 
-h4. Example config/environments/production.rb @asset_host@ snippet using AssetHostingWithMinimumSsl:
+As of June 2010 AWS supports HTTPS requests on the CloudFront CDN, so you no longer have to worry about switching servers. (Yay!)
+
+h4. Example config/environments/production.rb @asset_host@ snippet:
+
+Here we're targeting a CNAME domain with HTTP support.
 
 <pre>
-config.action_controller.asset_host = AssetHostingWithMinimumSsl.new(
-  "http://cdn%d.app.yoursite.com",
-  "https://www.yoursite.com"
-)
+ActionController::Base.asset_host = Proc.new { |source, request|
+  if request.ssl?
+    "#{request.protocol}#{request.host_with_port}"
+  else
+    "#{request.protocol}assets.example.com"
+  end
+}
 </pre>
 
 
@@ -88,11 +94,6 @@ h3. AWS S3
 
 Required for uploading the assets to the Amazon Web Services S3 buckets.
 See "http://amazon.rubyforge.org/":http://amazon.rubyforge.org/ for more documentation on installation.
-
-h3. AssetHostingWithMinimumSsl (optional)
-
-Used to deal with switching between HTTP and HTTPS asset hosts, ensuring you serve non-HTTPS traffic from the fast CDN, and secure assets from your SSL signed web server.
-See "http://github.com/dhh/asset-hosting-with-minimum-ssl":http://github.com/dhh/asset-hosting-with-minimum-ssl.
 
 h2. About the name
 
