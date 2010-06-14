@@ -61,6 +61,8 @@ production:
   secret_access_key: YOUR_SECRET_ACCESS_KEY
 </pre>
 
+Note: If you are deploying your system to Heroku, you can configure your Amazon AWS S3 information with the environment variables S3_KEY and S3_SECRET instead of using a configuration file. 
+
 h3. Set up an asset_host
 
 For each environment that you'd like to utilise the CloudFront CDN for you'll need to define the asset_host within the @config/environments/{ENVIRONMENT}.rb@ configuration file.
