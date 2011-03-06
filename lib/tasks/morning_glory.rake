@@ -173,8 +173,8 @@ namespace :morning_glory do
         if DELETE_OTHER_REVISIONS
           puts "* Deleting other CDN revisions in #{BUCKET}"
 
-          AWS::S3::Bucket.find(BUCKET).objects(:prefix => CLOUDFRONT_REVISION_PREFIX, :max_keys => 10000).each do |object|
-            if object.key.index(ENV['RAILS_ASSET_ID']).nil?
+          AWS::S3::Bucket.find(BUCKET).each do |object|
+            if object.key.start_with?(CLOUDFRONT_REVISION_PREFIX) && object.key.index(ENV['RAILS_ASSET_ID']).nil?
               puts " ** Deleting #{BUCKET}/#{object.key}"
               object.delete
             end
