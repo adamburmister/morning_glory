@@ -12,9 +12,10 @@ rescue
 end
 
 begin
-  S3_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/s3.yml")[Rails.env] if !defined? S3_CONFIG
+  file_name = MORNING_GLORY_CONFIG[Rails.env].has_key?('s3_file') ? MORNING_GLORY_CONFIG[Rails.env]['s3_file'] : "s3"
+  S3_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/#{file_name}.yml")[Rails.env] if !defined? S3_CONFIG
 rescue
-  raise "Error loading MorningGlory configuration files. Please check config/s3.yml is configured correctly."
+  raise "Error loading MorningGlory configuration files. Please check config/#{file_name}.yml is configured correctly."
 end
 
 if defined? MORNING_GLORY_CONFIG

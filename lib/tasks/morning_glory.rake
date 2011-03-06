@@ -105,6 +105,7 @@ namespace :morning_glory do
                         }
       S3_LOGGING_ENABLED = MORNING_GLORY_CONFIG[Rails.env]['s3_logging_enabled'] || false
       DELETE_PREV_REVISION = MORNING_GLORY_CONFIG[Rails.env]['delete_prev_rev'] || false
+      DELETE_OTHER_REVISIONS = MORNING_GLORY_CONFIG[Rails.env]['delete_other_revs'] || false
       REGEX_ROOT_RELATIVE_CSS_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join('|')}))\1?\)/
     
       # Copy all the assets into the temp directory for processing
@@ -152,9 +153,10 @@ namespace :morning_glory do
             file_ext = file.split(/\./)[-1].to_sym
           
             puts " ** Uploading #{BUCKET}/#{file_path}"
+
             AWS::S3::S3Object.store(file_path, open(file), BUCKET,
-              :access => :public_read,
-              :content_type => CONTENT_TYPES[file_ext])
+              { :access => :public_read,
+              :content_type => CONTENT_TYPES[file_ext] }.merge(MORNING_GLORY_CONFIG[Rails.env]['metadata'] || {}))
           end
         end
 
@@ -165,6 +167,17 @@ namespace :morning_glory do
           AWS::S3::Bucket.find(BUCKET).objects(:prefix => @@prev_cdn_revision).each do |object|
             puts " ** Deleting #{BUCKET}/#{object.key}"
             object.delete
+          end
+        end
+
+        if DELETE_OTHER_REVISIONS
+          puts "* Deleting other CDN revisions in #{BUCKET}"
+
+          AWS::S3::Bucket.find(BUCKET).objects(:prefix => CLOUDFRONT_REVISION_PREFIX, :max_keys => 10000).each do |object|
+            if object.key.index(ENV['RAILS_ASSET_ID']).nil?
+              puts " ** Deleting #{BUCKET}/#{object.key}"
+              object.delete
+            end
           end
         end
       rescue
