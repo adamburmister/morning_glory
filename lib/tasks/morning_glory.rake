@@ -1,3 +1,5 @@
+require 'stringio'
+require 'zlib'
 require File.dirname(__FILE__) + "/../morning_glory"
 
 namespace :morning_glory do
@@ -77,6 +79,64 @@ namespace :morning_glory do
       end
     end
 
+    def upload_to_s3(upload_bucket, gzip = false)
+      puts "* Attempting to create S3 Bucket '#{upload_bucket}'"
+      AWS::S3::Bucket.create(upload_bucket)
+
+      AWS::S3::Bucket.enable_logging_for(upload_bucket) if S3_LOGGING_ENABLED
+
+      puts "* Uploading files to S3 Bucket '#{upload_bucket}'"
+      DIRECTORIES.each do |directory|
+        Dir[File.join(TEMP_DIRECTORY, directory, '**', "*.{#{CONTENT_TYPES.keys.join(',')}}")].each do |file|
+          file_path = file.gsub(/.*#{TEMP_DIRECTORY}\//, "")
+          file_path = File.join(ENV['RAILS_ASSET_ID'], file_path)
+          file_ext = file.split(/\./)[-1].to_sym
+          compressible = [:css, :js].include?(file_ext)
+
+          options =  { :access => :public_read,
+            :content_type => CONTENT_TYPES[file_ext] }.merge(MORNING_GLORY_CONFIG[Rails.env]['metadata'] || {})
+
+          if (gzip && compressible)
+            puts " ** Gzipping and uploading #{upload_bucket}/#{file_path}"
+
+            buffer = StringIO.open('', 'w')
+            gz = Zlib::GzipWriter.new(buffer)
+            gz.write(open(file).read)
+            gz.close
+            content = buffer.string
+            options['Content-Encoding'] = 'gzip'
+          else
+            puts " ** Uploading #{upload_bucket}/#{file_path}"
+            content = open(file)
+          end
+
+          AWS::S3::S3Object.store(file_path, content, upload_bucket,
+           options)
+        end
+      end
+
+      # If the configured to delete the prev revision, and the prev revision value was in the YAML (not the blank concat of CLOUDFRONT_REVISION_PREFIX + revision number)
+      if DELETE_PREV_REVISION && @@prev_cdn_revision != CLOUDFRONT_REVISION_PREFIX
+        # TODO: Figure out how to delete from the S3 bucket properly
+        puts "* Deleting previous CDN revision #{upload_bucket}/#{@@prev_cdn_revision}"
+        AWS::S3::Bucket.find(upload_bucket).objects(:prefix => @@prev_cdn_revision).each do |object|
+          puts " ** Deleting #{upload_bucket}/#{object.key}"
+          object.delete
+        end
+      end
+
+      if DELETE_OTHER_REVISIONS
+        puts "* Deleting other CDN revisions in #{upload_bucket}"
+
+        AWS::S3::Bucket.find(upload_bucket).each do |object|
+          if object.key.start_with?(CLOUDFRONT_REVISION_PREFIX) && object.key.index(ENV['RAILS_ASSET_ID']).nil?
+            puts " ** Deleting #{upload_bucket}/#{object.key}"
+            object.delete
+          end
+        end
+      end
+    end
+
     desc "Bump the revision, compile any Sass stylesheets, and deploy assets to S3 and Cloudfront"
     task :deploy => [:environment] do |t, args|
       require 'aws/s3'
@@ -94,7 +154,8 @@ namespace :morning_glory do
       SYNC_DIRECTORY  = File.join(Rails.root, 'public')
       TEMP_DIRECTORY  = File.join(Rails.root, 'tmp', 'morning_glory', 'cloudfront', Rails.env, ENV['RAILS_ASSET_ID']);
       # Configuration constants
-      BUCKET          = MORNING_GLORY_CONFIG[Rails.env]['bucket'] || Rails.env    
+      BUCKET          = MORNING_GLORY_CONFIG[Rails.env]['bucket'] || Rails.env
+      BUCKET_GZIP     = MORNING_GLORY_CONFIG[Rails.env]['bucket_gzip']
       DIRECTORIES     = MORNING_GLORY_CONFIG[Rails.env]['asset_directories'] || %w(images javascripts stylesheets)
       CONTENT_TYPES   = MORNING_GLORY_CONFIG[Rails.env]['content_types'] || {
                           :jpg => 'image/jpeg',
@@ -140,46 +201,8 @@ namespace :morning_glory do
       )
 
       begin
-        puts "* Attempting to create S3 Bucket '#{BUCKET}'"
-        AWS::S3::Bucket.create(BUCKET)
-      
-        AWS::S3::Bucket.enable_logging_for(BUCKET) if S3_LOGGING_ENABLED
-
-        puts "* Uploading files to S3 Bucket '#{BUCKET}'"
-        DIRECTORIES.each do |directory|
-          Dir[File.join(TEMP_DIRECTORY, directory, '**', "*.{#{CONTENT_TYPES.keys.join(',')}}")].each do |file|
-            file_path = file.gsub(/.*#{TEMP_DIRECTORY}\//, "")
-            file_path = File.join(ENV['RAILS_ASSET_ID'], file_path)
-            file_ext = file.split(/\./)[-1].to_sym
-          
-            puts " ** Uploading #{BUCKET}/#{file_path}"
-
-            AWS::S3::S3Object.store(file_path, open(file), BUCKET,
-              { :access => :public_read,
-              :content_type => CONTENT_TYPES[file_ext] }.merge(MORNING_GLORY_CONFIG[Rails.env]['metadata'] || {}))
-          end
-        end
-
-        # If the configured to delete the prev revision, and the prev revision value was in the YAML (not the blank concat of CLOUDFRONT_REVISION_PREFIX + revision number)
-        if DELETE_PREV_REVISION && @@prev_cdn_revision != CLOUDFRONT_REVISION_PREFIX
-          # TODO: Figure out how to delete from the S3 bucket properly
-          puts "* Deleting previous CDN revision #{BUCKET}/#{@@prev_cdn_revision}"
-          AWS::S3::Bucket.find(BUCKET).objects(:prefix => @@prev_cdn_revision).each do |object|
-            puts " ** Deleting #{BUCKET}/#{object.key}"
-            object.delete
-          end
-        end
-
-        if DELETE_OTHER_REVISIONS
-          puts "* Deleting other CDN revisions in #{BUCKET}"
-
-          AWS::S3::Bucket.find(BUCKET).each do |object|
-            if object.key.start_with?(CLOUDFRONT_REVISION_PREFIX) && object.key.index(ENV['RAILS_ASSET_ID']).nil?
-              puts " ** Deleting #{BUCKET}/#{object.key}"
-              object.delete
-            end
-          end
-        end
+        upload_to_s3(BUCKET)
+        upload_to_s3(BUCKET_GZIP, true) if BUCKET_GZIP
       rescue
         raise
       ensure
