@@ -2,7 +2,9 @@ h1. Morning Glory
 
 Morning Glory is comprised of a rake task and helper methods that manages the deployment of static assets into an Amazon CloudFront CDN's S3 Bucket, improving the performance of static assets on your Rails web applications.
 
-_NOTE: You will require an Amazon Web Services (AWS) account in order to use this gem. Specially: S3 for storing the files you wish to distribute, and CloudFront for CDN distribution of those files._
+_NOTE: You will require an Amazon Web Services (AWS) account in order to use this gem. Specially: S3 for storing the files you wish to distribute, and CloudFront for CDN distribution of those files._     
+
+This version of Morning Glory works with Rails 3.x and Ruby 1.9.x
 
 h2. What does it do?
 
@@ -22,7 +24,7 @@ Morning Glory cannot configure your CloudFront distributions for you automatical
 h2. Installation
 
 <pre>
-script/plugin install git://github.com/adamburmister/morning_glory.git
+gem 'morning_glory'
 </pre>
 
 h2. Usage

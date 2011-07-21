@@ -25,16 +25,6 @@ namespace :morning_glory do
     def get_revision
       rev = nil
 
-      # GIT
-      begin
-        git_rev = `git show --pretty=format:"%H|%ci" --quiet`.split('|')[0]
-        if !git_rev.nil?
-          rev = git_rev.to_s
-          puts '* Using Git revision'
-        end
-      rescue
-        # Ignore
-      end
       # SVN
       begin
         svn_rev = `svnversion .`.chomp.gsub(':','_')
@@ -46,7 +36,17 @@ namespace :morning_glory do
       rescue
         # Ignore
       end
-      
+      # GIT
+      begin
+        git_rev = `git show --pretty=format:"%H|%ci" --quiet`.split('|')[0]
+        if !git_rev.nil?
+          rev = git_rev.to_s
+          puts '* Using Git revision'
+        end
+      rescue
+        # Ignore
+      end
+            
       if rev.nil?
         rev = Time.new.strftime("%Y%m%d%H%M%S") 
         puts '* Using timestamp revision'
@@ -82,7 +82,7 @@ namespace :morning_glory do
     desc "Bump the revision, compile any Sass stylesheets, and deploy assets to S3 and Cloudfront"
     task :deploy => [:environment] do |t, args|
       require 'aws/s3'
-      require 'ftools'
+      require 'fileutils'
       
       puts 'MorningGlory: Starting deployment to the Cloudfront CDN...'
       
@@ -110,14 +110,14 @@ namespace :morning_glory do
       REGEX_ROOT_RELATIVE_CSS_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join('|')}))\1?\)/
     
       # Copy all the assets into the temp directory for processing
-      File.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)
+      FileUtils.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)
       puts "* Copying files to working directory for cache-busting-renaming"
       DIRECTORIES.each do |directory|
         Dir[File.join(SYNC_DIRECTORY, directory, '**', "*.{#{CONTENT_TYPES.keys.join(',')}}")].each do |file|
           file_path = file.gsub(/.*public\//, "")
           temp_file_path = File.join(TEMP_DIRECTORY, file_path)
 
-          File.makedirs(File.dirname(temp_file_path)) if !FileTest::directory?(File.dirname(temp_file_path))
+          FileUtils.makedirs(File.dirname(temp_file_path)) if !FileTest::directory?(File.dirname(temp_file_path))
         
           puts " ** Copied to #{temp_file_path}"
           FileUtils.copy file, temp_file_path

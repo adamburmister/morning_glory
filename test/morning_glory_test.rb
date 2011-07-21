@@ -13,7 +13,7 @@ REPLACEMENT = "url(\1#{RAILS_ASSET_ID}\2\1)"
 
 class MorningGloryTest < ActiveSupport::TestCase
 
-  test "CSS URL replacment" do
+  test "CSS URL replacement" do
     assert_equals "background: url(/images/test.png)".gsub(REGEX_ROOT_RELATIVE_CSS_URL, REPLACEMENT), ""
   end 
   
