@@ -5,15 +5,16 @@ module MorningGlory
   # Nothing
 end
 
-begin
-  MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
+begin      
+  puts "Path #{path}"
+  MORNING_GLORY_CONFIG = YAML.load_file("#{path}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
 rescue
-  raise "Error loading MorningGlory configuration files. Please check config/morning_glory.yml is configured correctly."
+  raise ".Error loading MorningGlory configuration files. Please check config/morning_glory.yml is configured correctly."
 end
 
 begin
   if (!ENV['S3_KEY'] && !ENV['S3_SECRET'])   
-    S3_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/s3.yml")[Rails.env] if !defined? S3_CONFIG
+    S3_CONFIG = YAML.load_file("#{path}/config/s3.yml")[Rails.env] if !defined? S3_CONFIG
   end
   
 rescue

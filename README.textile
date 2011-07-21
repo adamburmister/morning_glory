@@ -1,3 +1,7 @@
+http://www.engineyard.com/blog/2010/extending-rails-3-with-railties/
+http://www.igvita.com/2010/08/04/rails-3-internals-railtie-creating-plugins/
+
+
 h1. Morning Glory
 
 Morning Glory is comprised of a rake task and helper methods that manages the deployment of static assets into an Amazon CloudFront CDN's S3 Bucket, improving the performance of static assets on your Rails web applications.

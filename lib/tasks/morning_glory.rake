@@ -6,8 +6,8 @@ namespace :morning_glory do
     @@prev_cdn_revision = nil
     @@scm_commit_required = false
     
-    begin
-      MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
+    begin                                  
+      MORNING_GLORY_CONFIG = YAML.load_file("#{path}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
     rescue
     end
   
@@ -67,7 +67,7 @@ namespace :morning_glory do
       # Store the previous revision so we can delete the bucket from S3 later after deploy
       @@prev_cdn_revision = CLOUDFRONT_REVISION_PREFIX + prev
     
-      File.open("#{RAILS_ROOT}/config/morning_glory.yml", 'w') { |f| YAML.dump(MORNING_GLORY_CONFIG, f) }
+      File.open("#{path}/config/morning_glory.yml", 'w') { |f| YAML.dump(MORNING_GLORY_CONFIG, f) }
     
       puts "* CDN revision updated for '#{Rails.env}' environment to #{ENV['RAILS_ASSET_ID']}" 
     end
