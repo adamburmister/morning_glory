@@ -1,8 +1,14 @@
+http://www.engineyard.com/blog/2010/extending-rails-3-with-railties/
+http://www.igvita.com/2010/08/04/rails-3-internals-railtie-creating-plugins/
+
+
 h1. Morning Glory
 
 Morning Glory is comprised of a rake task and helper methods that manages the deployment of static assets into an Amazon CloudFront CDN's S3 Bucket, improving the performance of static assets on your Rails web applications.
 
-_NOTE: You will require an Amazon Web Services (AWS) account in order to use this gem. Specially: S3 for storing the files you wish to distribute, and CloudFront for CDN distribution of those files._
+_NOTE: You will require an Amazon Web Services (AWS) account in order to use this gem. Specially: S3 for storing the files you wish to distribute, and CloudFront for CDN distribution of those files._     
+
+This version of Morning Glory works with Rails 3.x and Ruby 1.9.x
 
 h2. What does it do?
 
@@ -22,7 +28,7 @@ Morning Glory cannot configure your CloudFront distributions for you automatical
 h2. Installation
 
 <pre>
-script/plugin install git://github.com/adamburmister/morning_glory.git
+gem 'morning_glory'
 </pre>
 
 h2. Usage
@@ -60,6 +66,8 @@ production:
   access_key_id: YOUR_ACCESS_KEY
   secret_access_key: YOUR_SECRET_ACCESS_KEY
 </pre>
+
+Note: If you are deploying your system to Heroku, you can configure your Amazon AWS S3 information with the environment variables S3_KEY and S3_SECRET instead of using a configuration file. 
 
 h3. Set up an asset_host
 

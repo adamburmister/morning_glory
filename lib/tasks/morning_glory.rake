@@ -6,8 +6,8 @@ namespace :morning_glory do
     @@prev_cdn_revision = nil
     @@scm_commit_required = false
     
-    begin
-      MORNING_GLORY_CONFIG = YAML.load_file("#{RAILS_ROOT}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
+    begin                                  
+      MORNING_GLORY_CONFIG = YAML.load_file("#{path}/config/morning_glory.yml") if !defined? MORNING_GLORY_CONFIG
     rescue
     end
   
@@ -15,24 +15,16 @@ namespace :morning_glory do
       if !defined? MORNING_GLORY_CONFIG[Rails.env] || MORNING_GLORY_CONFIG[Rails.env]['enabled'] != true
           raise "Deployment appears to be disabled for this environment (#{Rails.env}) within config/morning_glory.yml. Specify an alternative environment with RAILS_ENV={environment name}."
       end
-      if !defined? S3_CONFIG[Rails.env]
-        raise "You seem to be lacking your Amazon S3 configuration file, config/s3.yml"
+      if (!ENV['S3_KEY'] && !ENV['S3_SECRET'])   
+        if !defined? S3_CONFIG[Rails.env]
+          raise "You seem to be lacking your Amazon S3 configuration file, config/s3.yml"
+        end
       end
     end
     
     def get_revision
       rev = nil
 
-      # GIT
-      begin
-        git_rev = `git show --pretty=format:"%H|%ci" --quiet`.split('|')[0]
-        if !git_rev.nil?
-          rev = git_rev.to_s
-          puts '* Using Git revision'
-        end
-      rescue
-        # Ignore
-      end
       # SVN
       begin
         svn_rev = `svnversion .`.chomp.gsub(':','_')
@@ -44,7 +36,17 @@ namespace :morning_glory do
       rescue
         # Ignore
       end
-      
+      # GIT
+      begin
+        git_rev = `git show --pretty=format:"%H|%ci" --quiet`.split('|')[0]
+        if !git_rev.nil?
+          rev = git_rev.to_s
+          puts '* Using Git revision'
+        end
+      rescue
+        # Ignore
+      end
+            
       if rev.nil?
         rev = Time.new.strftime("%Y%m%d%H%M%S") 
         puts '* Using timestamp revision'
@@ -65,7 +67,7 @@ namespace :morning_glory do
       # Store the previous revision so we can delete the bucket from S3 later after deploy
       @@prev_cdn_revision = CLOUDFRONT_REVISION_PREFIX + prev
     
-      File.open("#{RAILS_ROOT}/config/morning_glory.yml", 'w') { |f| YAML.dump(MORNING_GLORY_CONFIG, f) }
+      File.open("#{path}/config/morning_glory.yml", 'w') { |f| YAML.dump(MORNING_GLORY_CONFIG, f) }
     
       puts "* CDN revision updated for '#{Rails.env}' environment to #{ENV['RAILS_ASSET_ID']}" 
     end
@@ -80,7 +82,7 @@ namespace :morning_glory do
     desc "Bump the revision, compile any Sass stylesheets, and deploy assets to S3 and Cloudfront"
     task :deploy => [:environment] do |t, args|
       require 'aws/s3'
-      require 'ftools'
+      require 'fileutils'
       
       puts 'MorningGlory: Starting deployment to the Cloudfront CDN...'
       
@@ -108,14 +110,14 @@ namespace :morning_glory do
       REGEX_ROOT_RELATIVE_CSS_URL = /url\((\'|\")?(\/+.*(#{CONTENT_TYPES.keys.map { |k| '\.' + k.to_s }.join('|')}))\1?\)/
     
       # Copy all the assets into the temp directory for processing
-      File.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)
+      FileUtils.makedirs TEMP_DIRECTORY if !FileTest::directory?(TEMP_DIRECTORY)
       puts "* Copying files to working directory for cache-busting-renaming"
       DIRECTORIES.each do |directory|
         Dir[File.join(SYNC_DIRECTORY, directory, '**', "*.{#{CONTENT_TYPES.keys.join(',')}}")].each do |file|
           file_path = file.gsub(/.*public\//, "")
           temp_file_path = File.join(TEMP_DIRECTORY, file_path)
 
-          File.makedirs(File.dirname(temp_file_path)) if !FileTest::directory?(File.dirname(temp_file_path))
+          FileUtils.makedirs(File.dirname(temp_file_path)) if !FileTest::directory?(File.dirname(temp_file_path))
         
           puts " ** Copied to #{temp_file_path}"
           FileUtils.copy file, temp_file_path
@@ -134,8 +136,8 @@ namespace :morning_glory do
       # TODO: Update references within JS files
     
       AWS::S3::Base.establish_connection!(
-        :access_key_id     => S3_CONFIG['access_key_id'],
-        :secret_access_key => S3_CONFIG['secret_access_key']
+        :access_key_id     => S3_CONFIG['access_key_id'] || ENV['S3_KEY'],
+        :secret_access_key => S3_CONFIG['secret_access_key'] || ENV['S3_SECRET']
       )
 
       begin
