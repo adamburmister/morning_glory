@@ -44,9 +44,15 @@ You can specify a configuration section for every rails environment (production,
 production: 
   enabled: true                     # Is MorningGlory enabled for this environment?
   bucket: cdn.production.foo.com    # The bucket to deploy your assets into
+  bucket_gzip: gzip.prod.foo.com    # An optional bucket to deploy a gzipped copy of your assets into
   s3_logging_enabled: true          # Log the deployment to S3
   revision: "20100317134627"        # The revision prefix. This timestamp automatically generateed on deployment
   delete_prev_rev: true             # Delete the previous asset release (save on S3 storage space)
+  delete_other_revs: true           # Deletes all other asset releases, useful if using Capistrano to deploy and
+                                    # the previous asset number is unknown
+  s3_file: amazon_s3                # Overrides the default name of the S3 configuration file
+  metadata:                         # Metadata that will be passed through to S3
+    expires: Sun, 11 Jan...         # Will set the HTTP expires header to the given value
 </pre>
 
 h3. The Amazon S3 authentication keys configuration file, @config/s3.yml@

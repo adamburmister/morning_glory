@@ -22,6 +22,8 @@ Sample config/morning_glory.yml:
     - javascripts
     - stylesheets
     revision: "20100316165112"
+    metadata:
+      expires: Sun, 11 Jan 2099 20:00:00 GMT
   staging: 
     bucket: cdn.staging.yoursite.com
     enabled: true
